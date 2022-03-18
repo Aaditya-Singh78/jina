@@ -1,14 +1,14 @@
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
 from fastapi import APIRouter
 
+from daemon.excepts import PartialDaemon400Exception
+from daemon.models import FlowModel
+from daemon.models.partial import PartialFlowItem
+from daemon.models.ports import PortMappings
+from daemon.stores import partial_store as store
 from jina.helper import ArgNamespace
 from jina.parsers.flow import set_flow_parser
-
-from daemon.models import FlowModel
-from daemon.models.ports import PortMappings
-from daemon.models.partial import PartialFlowItem
-from daemon.excepts import PartialDaemon400Exception
-from daemon.stores import partial_store as store
 
 router = APIRouter(prefix='/flow', tags=['flow'])
 
@@ -41,45 +41,6 @@ async def _create(
         args = ArgNamespace.kwargs2namespace(flow.dict(), set_flow_parser())
         return store.add(args, ports, envs)
     except Exception as ex:
-        raise PartialDaemon400Exception from ex
-
-
-@router.put(
-    path='/rolling_update',
-    summary='Peform rolling_update on the Flow object',
-    response_model=PartialFlowItem,
-)
-async def rolling_update(
-    deployment_name: str,
-    uses_with: Optional[Dict[str, Any]] = None,
-):
-    """
-
-    .. #noqa: DAR101
-    .. #noqa: DAR201
-    """
-    try:
-        return await store.rolling_update(
-            deployment_name=deployment_name, uses_with=uses_with
-        )
-    except ValueError as ex:
-        raise PartialDaemon400Exception from ex
-
-
-@router.put(
-    path='/scale',
-    summary='Scale a Deployment in the running Flow',
-    response_model=PartialFlowItem,
-)
-async def scale(deployment_name: str, replicas: int):
-    """
-
-    .. #noqa: DAR101
-    .. #noqa: DAR201
-    """
-    try:
-        return await store.scale(deployment_name=deployment_name, replicas=replicas)
-    except ValueError as ex:
         raise PartialDaemon400Exception from ex
 
 

@@ -1,19 +1,18 @@
-from pathlib import Path
 from abc import ABC, abstractmethod
 from argparse import Namespace
+from pathlib import Path
 from typing import Dict, Optional, Type, Union
 
-from jina.helper import colored, random_port
-from jina.orchestrate.deployments import Deployment, BaseDeployment
-from jina.orchestrate.pods.factory import PodFactory
-from jina.orchestrate.pods import BasePod
-from jina.orchestrate.pods.helper import update_runtime_cls
-from jina import Flow, __docker_host__
-from jina.logging.logger import JinaLogger
-
-from daemon import jinad_args, __partial_workspace__
-from daemon.models.ports import Ports, PortMappings
+from daemon import __partial_workspace__, jinad_args
 from daemon.models.partial import PartialFlowItem, PartialStoreItem
+from daemon.models.ports import PortMappings, Ports
+from jina import Flow, __docker_host__
+from jina.helper import colored, random_port
+from jina.logging.logger import JinaLogger
+from jina.orchestrate.deployments import BaseDeployment, Deployment
+from jina.orchestrate.pods import BasePod
+from jina.orchestrate.pods.factory import PodFactory
+from jina.orchestrate.pods.helper import update_runtime_cls
 
 
 class PartialStore(ABC):
@@ -94,39 +93,6 @@ class PartialDeploymentStore(PartialPodStore):
 
     poddeployment_constructor = Deployment
 
-    async def rolling_update(
-        self, uses_with: Optional[Dict] = None
-    ) -> PartialStoreItem:
-        """Perform rolling_update on current Deployment
-
-        :param uses_with: a Dictionary of arguments to restart the executor with
-        :return: Item describing the Flow object
-        """
-        try:
-            await self.object.rolling_update(uses_with=uses_with)
-        except Exception as e:
-            self._logger.error(f'{e!r}')
-            raise
-        else:
-            self.item.arguments = vars(self.object.args)
-            self._logger.success(f'Deployment is successfully rolling_updated!')
-            return self.item
-
-    async def scale(self, replicas: int) -> PartialStoreItem:
-        """Scale the current Deployment
-        :param replicas: number of replicas for the Deployment
-        :return: Item describing the Flow object
-        """
-        try:
-            await self.object.scale(replicas=replicas)
-        except Exception as e:
-            self._logger.error(f'{e!r}')
-            raise
-        else:
-            self.item.arguments = vars(self.object.args)
-            self._logger.success(f'Deployment is successfully scaled!')
-            return self.item
-
 
 class PartialFlowStore(PartialStore):
     """A Flow store spawned inside partial-daemon container"""
@@ -201,67 +167,3 @@ class PartialFlowStore(PartialStore):
                     random_port(),
                 ),
             )
-
-    async def rolling_update(
-        self, deployment_name: str, uses_with: Optional[Dict] = None
-    ) -> PartialFlowItem:
-        """Perform rolling_update on the Deployment in current Flow
-
-        :param deployment_name: Deployment in the Flow to be rolling updated
-        :param uses_with: a Dictionary of arguments to restart the executor with
-        :return: Item describing the Flow object
-        """
-        try:
-            await self._rolling_update(
-                deployment_name=deployment_name, uses_with=uses_with
-            )
-        except Exception as e:
-            self._logger.error(f'{e!r}')
-            raise
-        else:
-            self.item.arguments = vars(self.object.args)
-            self._logger.success(f'Flow is successfully rolling_updated!')
-            return self.item
-
-    async def _rolling_update(
-        self,
-        deployment_name: str,
-        uses_with: Optional[Dict] = None,
-    ):
-        """
-        Reload all replicas of a deployment sequentially
-
-        :param deployment_name: deployment to update
-        :param uses_with: a Dictionary of arguments to restart the executor with
-        """
-        await self.object._deployment_nodes[deployment_name].rolling_update(
-            uses_with=uses_with
-        )
-
-    async def scale(self, deployment_name: str, replicas: int) -> PartialFlowItem:
-        """Scale the Deployment in current Flow
-        :param deployment_name: Deployment to be scaled
-        :param replicas: number of replicas for the Deployment
-        :return: Item describing the Flow object
-        """
-        try:
-            await self._scale(deployment_name=deployment_name, replicas=replicas)
-        except Exception as e:
-            self._logger.error(f'{e!r}')
-            raise
-        self.item.arguments = vars(self.object.args)
-        self._logger.success(f'Flow is successfully scaled!')
-        return self.item
-
-    async def _scale(
-        self,
-        deployment_name: str,
-        replicas: int,
-    ):
-        """
-        Scale the amount of replicas of a given Executor.
-        :param deployment_name: deployment to update
-        :param replicas: The number of replicas to scale to
-        """
-
-        await self.object._deployment_nodes[deployment_name].scale(replicas)

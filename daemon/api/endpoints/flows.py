@@ -1,11 +1,11 @@
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends
 from fastapi.exceptions import HTTPException
 
 from daemon import Runtime400Exception
 from daemon.api.dependencies import FlowDepends
-from daemon.models import DaemonID, ContainerItem, ContainerStoreStatus, FlowModel
+from daemon.models import ContainerItem, ContainerStoreStatus, DaemonID, FlowModel
 from daemon.stores import flow_store as store
 
 router = APIRouter(prefix='/flows', tags=['flows'])
@@ -38,36 +38,6 @@ async def _create(flow: FlowDepends = Depends(FlowDepends)):
             ports=flow.ports,
             envs=flow.envs,
             device_requests=flow.device_requests,
-        )
-    except Exception as ex:
-        raise Runtime400Exception from ex
-
-
-@router.put(
-    path='/rolling_update/{id}',
-    summary='Trigger a rolling_update operation on the Flow object',
-)
-async def _rolling_update(
-    id: DaemonID,
-    deployment_name: str,
-    uses_with: Optional[Dict[str, Any]] = None,
-):
-    try:
-        return await store.rolling_update(
-            id=id, deployment_name=deployment_name, uses_with=uses_with
-        )
-    except Exception as ex:
-        raise Runtime400Exception from ex
-
-
-@router.put(
-    path='/scale/{id}',
-    summary='Trigger a scale operation on the Flow object',
-)
-async def _scale(id: DaemonID, deployment_name: str, replicas: int):
-    try:
-        return await store.scale(
-            id=id, deployment_name=deployment_name, replicas=replicas
         )
     except Exception as ex:
         raise Runtime400Exception from ex

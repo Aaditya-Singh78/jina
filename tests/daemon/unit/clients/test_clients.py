@@ -1,13 +1,13 @@
-import pytest
 import aiohttp
+import pytest
 
-from daemon.models.id import DaemonID
 from daemon.clients import JinaDClient
-from daemon.clients.base import BaseClient, AsyncBaseClient
-from daemon.clients.pods import PodClient, AsyncPodClient
-from daemon.clients.deployments import DeploymentClient, AsyncDeploymentClient
-from daemon.clients.flows import FlowClient, AsyncFlowClient
-from daemon.clients.workspaces import WorkspaceClient, AsyncWorkspaceClient
+from daemon.clients.base import AsyncBaseClient, BaseClient
+from daemon.clients.deployments import AsyncDeploymentClient, DeploymentClient
+from daemon.clients.flows import AsyncFlowClient, FlowClient
+from daemon.clients.pods import AsyncPodClient, PodClient
+from daemon.clients.workspaces import AsyncWorkspaceClient, WorkspaceClient
+from daemon.models.id import DaemonID
 from jina.logging.logger import JinaLogger
 
 logger = JinaLogger('BaseTests')
@@ -319,68 +319,6 @@ async def test_podpod_create_async(monkeypatch, identity, client_cls):
 
     monkeypatch.setattr(aiohttp, 'request', lambda **kwargs: MockAiohttpException())
     assert await client.create(identity, payload) is None
-
-
-def test_deployment_rolling_update(monkeypatch):
-    payload = {'1': 2}
-
-    identity = DaemonID('jdeployment')
-    client = DeploymentClient(uri=MOCK_URI, logger=logger)
-    monkeypatch.setattr(
-        aiohttp, 'request', lambda **kwargs: MockAiohttpResponse({1: 2}, 201)
-    )
-    response = client.rolling_update(identity, uses_with=payload)
-    assert response == {1: 2}
-
-    monkeypatch.setattr(aiohttp, 'request', lambda **kwargs: MockAiohttpException())
-    assert client.rolling_update(identity, uses_with=payload) is None
-
-
-@pytest.mark.asyncio
-async def test_deployment_rolling_update_async(monkeypatch):
-    payload = {'1': 2}
-
-    identity = DaemonID('jdeployment')
-    client = AsyncDeploymentClient(uri=MOCK_URI, logger=logger)
-    monkeypatch.setattr(
-        aiohttp, 'request', lambda **kwargs: MockAiohttpResponse({1: 2}, 201)
-    )
-    response = await client.rolling_update(identity, uses_with=payload)
-    assert response == {1: 2}
-
-    monkeypatch.setattr(aiohttp, 'request', lambda **kwargs: MockAiohttpException())
-    assert await client.rolling_update(identity, uses_with=payload) is None
-
-
-def test_deployment_scale(monkeypatch):
-    payload = {'1': 2}
-
-    identity = DaemonID('jdeployment')
-    client = DeploymentClient(uri=MOCK_URI, logger=logger)
-    monkeypatch.setattr(
-        aiohttp, 'request', lambda **kwargs: MockAiohttpResponse({1: 2}, 201)
-    )
-    response = client.scale(identity, replicas=2)
-    assert response == {1: 2}
-
-    monkeypatch.setattr(aiohttp, 'request', lambda **kwargs: MockAiohttpException())
-    assert client.scale(identity, replicas=2) is None
-
-
-@pytest.mark.asyncio
-async def test_deployment_scale_async(monkeypatch):
-    payload = {'1': 2}
-
-    identity = DaemonID('jdeployment')
-    client = AsyncDeploymentClient(uri=MOCK_URI, logger=logger)
-    monkeypatch.setattr(
-        aiohttp, 'request', lambda **kwargs: MockAiohttpResponse({1: 2}, 201)
-    )
-    response = await client.scale(identity, replicas=2)
-    assert response == {1: 2}
-
-    monkeypatch.setattr(aiohttp, 'request', lambda **kwargs: MockAiohttpException())
-    assert await client.scale(identity, replicas=2) is None
 
 
 @pytest.mark.parametrize(

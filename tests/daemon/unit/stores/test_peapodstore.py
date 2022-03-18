@@ -3,8 +3,8 @@ from typing import Type
 
 import pytest
 
-from daemon.models import DaemonID, PodModel, DeploymentModel
-from daemon.stores import PodStore, DeploymentStore
+from daemon.models import DaemonID, DeploymentModel, PodModel
+from daemon.stores import DeploymentStore, PodStore
 from daemon.stores.partial import PartialStore
 from jina import Executor
 
@@ -13,7 +13,7 @@ cur_dir = os.path.dirname(os.path.abspath(__file__))
 
 @pytest.fixture(scope='module')
 def workspace():
-    from tests.conftest import _create_workspace_directly, _clean_up_workspace
+    from tests.conftest import _clean_up_workspace, _create_workspace_directly
 
     image_id, network_id, workspace_id, workspace_store = _create_workspace_directly(
         cur_dir
@@ -77,33 +77,4 @@ async def test_podpod_store_add_bad(model, store, id, workspace):
     s = store()
     with pytest.raises(Exception):
         await s.add(id=id, params=model, workspace_id=workspace, ports={})
-    assert not s
-
-
-@pytest.mark.asyncio
-async def test_podstore_rolling_update(workspace):
-    id = DaemonID('jdeployment')
-    s = DeploymentStore()
-    await s.add(id=id, params=DeploymentModel(), workspace_id=workspace, ports={})
-    assert len(s) == 1
-    assert id in s
-    await s.rolling_update(id=id, uses_with={'a': 'b'})
-    await s.delete(id)
-    assert not s
-
-
-@pytest.mark.asyncio
-async def test_podstore_scale(workspace):
-    id = DaemonID('jdeployment')
-    s = DeploymentStore()
-    await s.add(
-        id=id,
-        params=DeploymentModel(replicas=2, shards=2),
-        workspace_id=workspace,
-        ports={},
-    )
-    assert len(s) == 1
-    assert id in s
-    await s.scale(id=id, replicas=3)
-    await s.delete(id)
     assert not s

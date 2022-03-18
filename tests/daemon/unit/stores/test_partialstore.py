@@ -61,38 +61,3 @@ def test_flowstore_add(monkeypatch, partial_flow_store):
     assert isinstance(partial_flow_store.object, Flow)
     assert 'executor1' in partial_store_item.yaml_source
     assert partial_flow_store.object.port == 12345
-
-
-@pytest.mark.asyncio
-async def test_flowstore_rolling_update(partial_flow_store, mocker):
-    flow_model = FlowModel()
-    flow_model.uses = f'{cur_dir}/flow.yml'
-    args = ArgNamespace.kwargs2namespace(flow_model.dict(), set_flow_parser())
-
-    partial_flow_store.add(args)
-
-    future = asyncio.Future()
-    future.set_result(PartialStoreItem())
-    mocker.patch(
-        'daemon.stores.partial.PartialFlowStore.rolling_update', return_value=future
-    )
-
-    resp = await partial_flow_store.rolling_update(
-        deployment_name='executor1', uses_with={}
-    )
-    assert resp
-
-
-@pytest.mark.asyncio
-async def test_flowstore_scale(partial_flow_store, mocker):
-    flow_model = FlowModel()
-    flow_model.uses = f'{cur_dir}/flow.yml'
-    args = ArgNamespace.kwargs2namespace(flow_model.dict(), set_flow_parser())
-
-    partial_flow_store.add(args)
-
-    future = asyncio.Future()
-    future.set_result(PartialStoreItem())
-    mocker.patch('daemon.stores.partial.PartialFlowStore.scale', return_value=future)
-    resp = await partial_flow_store.scale(deployment_name='executor1', replicas=2)
-    assert resp

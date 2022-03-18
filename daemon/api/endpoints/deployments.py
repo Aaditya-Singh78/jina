@@ -1,10 +1,10 @@
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
-from fastapi import Depends, APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from daemon import Runtime400Exception
 from daemon.api.dependencies import DeploymentDepends
-from daemon.models import DaemonID, ContainerItem, ContainerStoreStatus, DeploymentModel
+from daemon.models import ContainerItem, ContainerStoreStatus, DaemonID, DeploymentModel
 from daemon.stores import deployment_store as store
 
 router = APIRouter(prefix='/deployments', tags=['deployments'])
@@ -41,31 +41,6 @@ async def _create(deployment: DeploymentDepends = Depends(DeploymentDepends)):
             envs=deployment.envs,
             device_requests=deployment.device_requests,
         )
-    except Exception as ex:
-        raise Runtime400Exception from ex
-
-
-@router.put(
-    path='/rolling_update/{id}',
-    summary='Trigger a rolling_update operation on the Deployment object',
-)
-async def _rolling_update(
-    id: DaemonID,
-    uses_with: Optional[Dict[str, Any]] = None,
-):
-    try:
-        return await store.rolling_update(id=id, uses_with=uses_with)
-    except Exception as ex:
-        raise Runtime400Exception from ex
-
-
-@router.put(
-    path='/scale/{id}',
-    summary='Trigger a scale operation on the Deployment object',
-)
-async def _scale(id: DaemonID, replicas: int):
-    try:
-        return await store.scale(id=id, replicas=replicas)
     except Exception as ex:
         raise Runtime400Exception from ex
 

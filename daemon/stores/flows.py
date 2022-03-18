@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING, Dict, Optional
 
-from jina.helper import colored
 from daemon.stores.base import BaseStore
-from daemon.stores.mixin import AiohttpMixin
 from daemon.stores.containers import ContainerStore
+from daemon.stores.mixin import AiohttpMixin
+from jina.helper import colored
 
 if TYPE_CHECKING:
     from daemon.models import DaemonID
@@ -41,63 +41,3 @@ class FlowStore(ContainerStore, AiohttpMixin):
         :return: response from DELETE request
         """
         return await self.DELETE(url=f'{uri}/{self._kind}')
-
-    @BaseStore.dump
-    async def rolling_update(
-        self, id: 'DaemonID', deployment_name: str, uses_with: Optional[Dict] = None
-    ) -> 'DaemonID':
-        """rolling_update the Flow inside the container
-
-        :param id: id of the Flow
-        :param deployment_name: Deployment in the Flow to be rolling updated
-        :param uses_with: the uses_with arguments to update the executor in deployment_name
-        :raises KeyError: if id doesn't exist in the store
-        :return: id of the Flow
-        """
-
-        if id not in self:
-            raise KeyError(f'{colored(id, "red")} not found in store.')
-
-        try:
-            object = await self.PUT(
-                url=f'{self[id].metadata.uri}/{self._kind}/rolling_update',
-                params={'deployment_name': deployment_name},
-                json=uses_with,
-            )
-        except Exception as e:
-            self._logger.error(f'Error while sending rolling_update to the Flow: \n{e}')
-            raise
-        else:
-            self[id].arguments.object = object
-            self._logger.success(f'{colored(id, "green")} is updated successfully')
-            return id
-
-    @BaseStore.dump
-    async def scale(
-        self, id: 'DaemonID', deployment_name: str, replicas: int
-    ) -> 'DaemonID':
-        """Scale the Flow inside the container
-
-        :param id: id of the Flow
-        :param deployment_name: Deployment in the Flow to be rolling updated
-        :param replicas: The number of replicas to scale to
-        :raises KeyError: if id doesn't exist in the store
-        :return: id of the Flow
-        """
-
-        if id not in self:
-            raise KeyError(f'{colored(id, "red")} not found in store.')
-
-        try:
-            object = await self.PUT(
-                url=f'{self[id].metadata.uri}/{self._kind}/scale',
-                params={'deployment_name': deployment_name, 'replicas': replicas},
-                json=None,
-            )
-        except Exception as e:
-            self._logger.error(f'Error while scaling the Flow: \n{e}')
-            raise
-        else:
-            self[id].arguments.object = object
-            self._logger.success(f'{colored(id, "green")} is scaled successfully')
-            return id
