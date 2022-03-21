@@ -134,6 +134,7 @@ class Flow(PostMixin, JAMLCompatible, ExitStack, metaclass=FlowType):
         cors: Optional[bool] = False,
         default_swagger_ui: Optional[bool] = False,
         deployments_addresses: Optional[str] = '{}',
+        deployments_disable_reduce: Optional[str] = '[]',
         description: Optional[str] = None,
         disable_reduce: Optional[bool] = False,
         env: Optional[dict] = None,
@@ -181,6 +182,7 @@ class Flow(PostMixin, JAMLCompatible, ExitStack, metaclass=FlowType):
         :param cors: If set, a CORS middleware is added to FastAPI frontend to allow cross-origin access.
         :param default_swagger_ui: If set, the default swagger ui is used for `/docs` endpoint.
         :param deployments_addresses: dictionary JSON with the input addresses of each Deployment
+        :param deployments_disable_reduce: list JSON disabling the built-in merging mechanism for each Deployment listed
         :param description: The description of this HTTP server. It will be used in automatics docs such as Swagger UI.
         :param disable_reduce: Disable the built-in reduce mechanism, set this if the reduction is to be handled by the Executor connected to this Head
         :param env: The map of environment variables that are available inside runtime
