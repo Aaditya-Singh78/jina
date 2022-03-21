@@ -1,9 +1,4 @@
-from typing import TYPE_CHECKING
-
 from daemon.stores.pods import PodStore
-
-if TYPE_CHECKING:
-    pass
 
 
 class DeploymentStore(PodStore):

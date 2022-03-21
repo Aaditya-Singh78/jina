@@ -5,14 +5,14 @@ import os
 
 import numpy as np
 import pytest
+from docarray.document.generators import from_ndarray
 
-from jina import Flow, Document, DocumentArray, Executor, requests, __windows__
+from jina import Document, DocumentArray, Executor, Flow, __windows__, requests
 from jina.enums import FlowBuildLevel
 from jina.excepts import RuntimeFailToStart
-from jina.serve.executors import BaseExecutor
 from jina.helper import random_identity
 from jina.orchestrate.deployments import BaseDeployment
-from docarray.document.generators import from_ndarray
+from jina.serve.executors import BaseExecutor
 from jina.types.request.data import Response
 from tests import random_docs
 
@@ -610,7 +610,10 @@ def _validate_flow(f):
     addresses = f._get_deployments_addresses()
     for name, pod in f:
         if name != 'gateway':
-            assert addresses[name][0] == f'{pod.protocol}://{pod.host}:{pod.head_port}'
+            assert (
+                addresses[name][0]
+                == f'{pod.protocol}://{pod.host}:{pod.head_port if pod.head_port else pod.port}'
+            )
             for n in pod.needs:
                 assert name in graph_dict[n if n != 'gateway' else 'start-gateway']
         else:
