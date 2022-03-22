@@ -1,8 +1,7 @@
-import os
 import asyncio
+import os
 
 from jina import __default_host__
-
 from jina.importer import ImportExtensions
 from jina.serve.runtimes.gateway import GatewayRuntime
 from jina.serve.runtimes.gateway.websocket.app import get_fastapi_app
@@ -71,6 +70,7 @@ class WebSocketGatewayRuntime(GatewayRuntime):
             )
         )
         await self._server.setup()
+        self._setup_monitoring_server()
 
     async def async_run_forever(self):
         """Running method of ther server."""

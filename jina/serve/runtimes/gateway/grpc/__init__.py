@@ -3,11 +3,10 @@ import os
 import grpc
 
 from jina import __default_host__
-
 from jina.proto import jina_pb2_grpc
 from jina.serve.runtimes.gateway import GatewayRuntime
-from jina.serve.stream import RequestStreamer
 from jina.serve.runtimes.gateway.request_handling import handle_request, handle_result
+from jina.serve.stream import RequestStreamer
 
 __all__ = ['GRPCGatewayRuntime']
 
@@ -36,6 +35,10 @@ class GRPCGatewayRuntime(GatewayRuntime):
         self._set_topology_graph()
         self._set_connection_pool()
 
+        await self._async_setup_server()
+        self._setup_monitoring_server()
+
+    async def _async_setup_server(self):
         self.streamer = RequestStreamer(
             args=self.args,
             request_handler=handle_request(
