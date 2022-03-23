@@ -70,7 +70,7 @@ class WebSocketGatewayRuntime(GatewayRuntime):
             )
         )
         await self._server.setup()
-        self._setup_monitoring_server()
+        self._setup_monitoring()
 
     async def async_run_forever(self):
         """Running method of ther server."""
