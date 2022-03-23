@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import contextlib
 import multiprocessing
 import threading
 from abc import ABC
@@ -42,6 +43,15 @@ class WorkerRuntime(AsyncNewLoopRuntime, MonitoringMixin, ABC):
         """
         await self._async_setup_grpc_server()
         self._setup_monitoring_server()
+
+        if self.args.monitoring:
+            from prometheus_client import Summary
+
+            self.summary = Summary(
+                'request_processing_seconds',
+                'Time spent processing request',
+                registry=self.metrics_registry,
+            )
 
     async def _async_setup_grpc_server(self):
         """
@@ -102,22 +112,28 @@ class WorkerRuntime(AsyncNewLoopRuntime, MonitoringMixin, ABC):
         :param context: grpc context
         :returns: the response request
         """
-        try:
-            if self.logger.debug_enabled:
-                self._log_data_request(requests[0])
 
-            return await self._data_request_handler.handle(requests=requests)
-        except (RuntimeError, Exception) as ex:
-            self.logger.error(
-                f'{ex!r}' + f'\n add "--quiet-error" to suppress the exception details'
-                if not self.args.quiet_error
-                else '',
-                exc_info=not self.args.quiet_error,
-            )
+        summary_time = (
+            self.summary.time if self.args.monitoring else contextlib.nullcontext()
+        )
+        with summary_time():
+            try:
+                if self.logger.debug_enabled:
+                    self._log_data_request(requests[0])
 
-            requests[0].add_exception(ex, self._data_request_handler._executor)
-            context.set_trailing_metadata((('is-error', 'true'),))
-            return requests[0]
+                return await self._data_request_handler.handle(requests=requests)
+            except (RuntimeError, Exception) as ex:
+                self.logger.error(
+                    f'{ex!r}'
+                    + f'\n add "--quiet-error" to suppress the exception details'
+                    if not self.args.quiet_error
+                    else '',
+                    exc_info=not self.args.quiet_error,
+                )
+
+                requests[0].add_exception(ex, self._data_request_handler._executor)
+                context.set_trailing_metadata((('is-error', 'true'),))
+                return requests[0]
 
     async def process_control(self, request: ControlRequest, *args) -> ControlRequest:
         """
