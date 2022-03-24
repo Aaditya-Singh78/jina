@@ -8,7 +8,6 @@ import os
 import random
 from pathlib import Path
 from typing import Dict, Optional, Union
-from urllib.parse import urlencode
 
 from jina import __resources_path__, __version__
 from jina.helper import ArgNamespace, colored, get_request_header, get_rich_console
@@ -588,11 +587,23 @@ f = Flow().add(uses='jinahub+sandbox://{executor_name}')
             payload['tag'] = tag
 
         req_header = get_request_header()
-        resp = requests.post(pull_url, json=payload, headers=req_header)
-        if resp.status_code != 200:
-            if resp.text:
-                raise Exception(resp.text)
-            resp.raise_for_status()
+
+        logger = JinaLogger('HubIO.fetch_meta')
+        for i in range(3):
+            try:
+                resp = requests.post(pull_url, json=payload, headers=req_header)
+                if resp.status_code != 200:
+                    if resp.text:
+                        raise Exception(resp.text)
+                    resp.raise_for_status()
+                break
+            except Exception as e:
+                logger.debug(
+                    f'Fetching meta info from Jina Hub failed, retry attempt {i+1}/3. '
+                    f'Error: {e!r}'
+                )
+                if i == 2:
+                    raise
 
         resp = resp.json()['data']
 
